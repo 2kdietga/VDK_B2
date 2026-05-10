@@ -82,7 +82,7 @@ class Command(BaseCommand):
             last_sent_version = int(get_state().get("command_version", 0))
 
             while True:
-                await asyncio.sleep(0.25)
+                await asyncio.sleep(0.05)
                 state = get_state()
 
                 command = {
@@ -101,6 +101,7 @@ class Command(BaseCommand):
                 payload = _build_device_payload(command)
                 request = aiocoap.Message(
                     code=aiocoap.POST,
+                    mtype=aiocoap.NON,
                     uri=uri,
                     payload=payload,
                 )
@@ -110,17 +111,7 @@ class Command(BaseCommand):
                     command_stdout.write(
                         f"Chuan bi gui ESP32 {uri}: {command} version={command_version}"
                     )
-                    response = await asyncio.wait_for(
-                        protocol.request(request).response,
-                        timeout=5,
-                    )
-                except asyncio.TimeoutError:
-                    command_stdout.write(
-                        command_style.WARNING(
-                            f"ESP32 khong response sau 5s. URI={uri}, payload={command}"
-                        )
-                    )
-                    continue
+                    protocol.request(request)
                 except Exception as exc:
                     command_stdout.write(
                         command_style.WARNING(
@@ -130,9 +121,8 @@ class Command(BaseCommand):
                     continue
 
                 last_sent_version = command_version
-                response_payload = response.payload.decode("utf-8", errors="ignore")
                 command_stdout.write(
-                    f"Gui ESP32 {uri}: {command} version={command_version} -> {response.code} {response_payload}"
+                    f"Gui ESP32 {uri}: {command} version={command_version} -> NON"
                 )
 
         asyncio.run(main())
