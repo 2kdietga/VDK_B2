@@ -53,6 +53,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"Django dashboard: http://{django_addr}/"))
         self.stdout.write(self.style.SUCCESS(f"CoAP endpoint: {coap_addr}"))
+        self.stdout.write(self.style.SUCCESS(f"ESP32 gui gesture toi: coap://{coap_host}:{options['coap_port']}/{options['coap_path']}"))
         self.stdout.write(
             self.style.SUCCESS(
                 f"ESP32 command: coap://{esp32_ip}:{esp32_command_port}/{esp32_command_path}"

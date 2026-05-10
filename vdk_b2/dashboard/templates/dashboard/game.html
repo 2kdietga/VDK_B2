@@ -1,0 +1,59 @@
+{% load static %}
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Game giải trí</title>
+    <link rel="stylesheet" href="{% static 'dashboard/game.css' %}">
+</head>
+<body>
+    <main class="game-shell">
+        <section class="hud">
+            <div>
+                <p class="label">Chế độ giải trí</p>
+                <h1>Kiếm sĩ địa hình</h1>
+            </div>
+            <div class="stats">
+                <span id="hpLabel">HP 5</span>
+                <span id="enemyLabel">Quái 3</span>
+                <span id="scoreLabel">Điểm 0</span>
+            </div>
+        </section>
+
+        <section class="arena" aria-label="Game kiếm sĩ">
+            <div class="sky"></div>
+            <div class="mountains"></div>
+            <div class="ground"></div>
+            <div id="player" class="fighter player">
+                <span class="head"></span>
+                <span class="body"></span>
+                <span class="sword"></span>
+            </div>
+            <div id="enemy" class="fighter enemy">
+                <span class="head"></span>
+                <span class="body"></span>
+            </div>
+            <div id="slash" class="slash hidden"></div>
+            <div id="lostOverlay" class="overlay hidden">
+                <h2>Thua rồi</h2>
+                <p>Nhấn OK để chơi lại</p>
+            </div>
+            <div id="pauseMenu" class="overlay menu hidden">
+                <p class="label">Menu game</p>
+                <div class="menu-item active" data-game-menu-index="0">Tiếp tục chơi</div>
+                <div class="menu-item" data-game-menu-index="1">Trở về dashboard</div>
+            </div>
+        </section>
+
+        <section class="game-pad" aria-label="Điều khiển game trên web">
+            <button type="button" data-game-input="menu">Menu</button>
+            <button type="button" data-game-input="left">Trái</button>
+            <button type="button" data-game-input="ok">OK / Chém</button>
+            <button type="button" data-game-input="right">Phải</button>
+        </section>
+    </main>
+
+    <script src="{% static 'dashboard/game.js' %}"></script>
+</body>
+</html>

@@ -4,6 +4,14 @@ const state = {
     gesture: "dung_yen",
     led: 50,
     motor: 50,
+    btnMenu: false,
+    btnOk: false,
+    menuOpen: false,
+    menuIndex: 0,
+    screen: "dashboard",
+    serverIp: "",
+    serverPort: "",
+    serverPath: "",
     esp32Ip: "",
     esp32Port: "",
     esp32LastSeen: 0,
@@ -35,12 +43,19 @@ const meters = {
 };
 
 const gestureLabel = document.querySelector("#gestureLabel");
+const serverStatus = document.querySelector("#serverStatus");
+const serverIp = document.querySelector("#serverIp");
+const serverPort = document.querySelector("#serverPort");
+const serverPath = document.querySelector("#serverPath");
 const espStatus = document.querySelector("#espStatus");
 const espIp = document.querySelector("#espIp");
 const espPort = document.querySelector("#espPort");
 const espLastSeen = document.querySelector("#espLastSeen");
 const modeButtons = Array.from(document.querySelectorAll(".mode-switch button"));
 const controlCards = Array.from(document.querySelectorAll(".control"));
+const menuPanel = document.querySelector("#menuPanel");
+const menuItems = Array.from(document.querySelectorAll(".menu-item"));
+const webPadButtons = Array.from(document.querySelectorAll("[data-web-input]"));
 
 function clamp(value) {
     return Math.max(0, Math.min(100, value));
@@ -49,12 +64,17 @@ function clamp(value) {
 function render() {
     for (const control of ["led", "motor"]) {
         ranges[control].value = state[control];
-        ranges[control].disabled = state.controlMode !== "manual";
+        ranges[control].disabled = state.controlMode !== "manual" || state.menuOpen;
         values[control].textContent = `${state[control]}%`;
         meters[control].style.width = `${state[control]}%`;
     }
 
     gestureLabel.textContent = labels[state.gesture] || state.gesture;
+    serverStatus.textContent = "CoAP sẵn sàng";
+    serverStatus.classList.add("online");
+    serverIp.textContent = state.serverIp || "--";
+    serverPort.textContent = state.serverPort || "--";
+    serverPath.textContent = state.serverPath || "--";
     espStatus.textContent = state.esp32Online ? "Đang kết nối" : "Mất kết nối";
     espStatus.classList.toggle("online", state.esp32Online);
     espIp.textContent = state.esp32Ip || "--";
@@ -69,6 +89,12 @@ function render() {
         card.classList.toggle("active", card.dataset.control === state.activeControl);
         card.classList.toggle("manual", state.controlMode === "manual");
     });
+
+    menuPanel.classList.toggle("hidden", !state.menuOpen);
+    menuItems.forEach((item) => {
+        item.classList.toggle("active", Number(item.dataset.menuIndex) === state.menuIndex);
+    });
+
 }
 
 function formatLastSeen(timestamp) {
@@ -95,7 +121,7 @@ function moveSelection(direction) {
 }
 
 function applyContinuousGesture() {
-    if (state.controlMode !== "gesture") {
+    if (state.controlMode !== "gesture" || state.menuOpen) {
         return;
     }
 
@@ -129,8 +155,34 @@ async function pushDashboardState() {
     }).catch(() => {});
 }
 
+async function sendInput(input) {
+    const response = await fetch("/api/input/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+    }).catch(() => {});
+
+    if (!response) {
+        return null;
+    }
+
+    return response.json().catch(() => null);
+}
+
 function syncFromServer(data) {
     state.gesture = data.gesture;
+    state.btnMenu = Boolean(data.btn_menu);
+    state.btnOk = Boolean(data.btn_ok);
+    state.menuOpen = Boolean(data.menu_open);
+    state.menuIndex = Number(data.menu_index || 0);
+    state.screen = data.screen || "dashboard";
+    if (state.screen === "game") {
+        window.location.href = "/game/";
+        return;
+    }
+    state.serverIp = data.server_ip || "";
+    state.serverPort = data.server_coap_port || "";
+    state.serverPath = data.server_coap_path || "";
     state.esp32Ip = data.esp32_ip || "";
     state.esp32Port = data.esp32_port || "";
     state.esp32LastSeen = Number(data.esp32_last_seen || 0);
@@ -143,7 +195,7 @@ function syncFromServer(data) {
         state.controlMode = data.control_mode;
     }
 
-    if (state.controlMode === "gesture") {
+    if (state.controlMode === "gesture" && !state.menuOpen) {
         if (!state.esp32Online) {
             state.gesture = "dung_yen";
             state.led = Number(data.led);
@@ -188,7 +240,7 @@ async function pollState() {
 
 for (const control of ["led", "motor"]) {
     ranges[control].addEventListener("input", (event) => {
-        if (state.controlMode !== "manual") {
+        if (state.controlMode !== "manual" || state.menuOpen) {
             return;
         }
 
@@ -205,6 +257,73 @@ modeButtons.forEach((button) => {
         render();
         pushDashboardState();
     });
+});
+
+menuItems.forEach((item) => {
+    item.addEventListener("click", async () => {
+        const targetIndex = Number(item.dataset.menuIndex);
+        while (state.menuIndex !== targetIndex) {
+            const nextState = await sendInput({ state: "down" });
+            if (!nextState) {
+                break;
+            }
+            syncFromServer(nextState);
+        }
+
+        await sendInput({ btn_ok: true });
+    });
+});
+
+webPadButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        const input = button.dataset.webInput;
+        if (input === "menu") {
+            sendInput({ btn_menu: true });
+        } else if (input === "ok") {
+            sendInput({ btn_ok: true });
+        } else {
+            sendInput({ state: input });
+        }
+    });
+});
+
+document.addEventListener("keydown", (event) => {
+    const key = event.key.toLowerCase();
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", "enter", " ", "m"].includes(key)) {
+        event.preventDefault();
+    }
+
+    if (key === "m") {
+        sendInput({ btn_menu: true });
+        return;
+    }
+
+    if (key === "enter" || key === " ") {
+        sendInput({ btn_ok: true });
+        return;
+    }
+
+    if (key === "arrowup") {
+        sendInput({ state: "up" });
+    } else if (key === "arrowdown") {
+        sendInput({ state: "down" });
+    } else if (key === "arrowleft") {
+        if (state.controlMode === "manual" && !state.menuOpen) {
+            state[state.activeControl] = clamp(state[state.activeControl] - 2);
+            render();
+            pushDashboardState();
+        } else {
+            sendInput({ state: "left" });
+        }
+    } else if (key === "arrowright") {
+        if (state.controlMode === "manual" && !state.menuOpen) {
+            state[state.activeControl] = clamp(state[state.activeControl] + 2);
+            render();
+            pushDashboardState();
+        } else {
+            sendInput({ state: "right" });
+        }
+    }
 });
 
 render();

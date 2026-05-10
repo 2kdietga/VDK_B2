@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
 from dashboard.network import resolve_bind_host
-from dashboard.state import extract_gesture, get_state, set_gesture
+from dashboard.state import extract_device_input, get_state, set_device_input
 
 
 class Command(BaseCommand):
@@ -37,17 +37,25 @@ class Command(BaseCommand):
         class GestureResource(resource.Resource):
             async def render_post(self, request):
                 payload = request.payload.decode("utf-8", errors="ignore").strip()
-                gesture = extract_gesture(payload)
-                state = set_gesture(gesture)
+                device_input = extract_device_input(payload)
+                state = set_device_input(payload)
 
                 if state is None:
                     return aiocoap.Message(
                         code=aiocoap.BAD_REQUEST,
-                        payload=f"Gesture khong hop le: {payload!r}".encode("utf-8"),
+                        payload=f"Payload khong hop le: {payload!r}".encode("utf-8"),
                     )
 
-                command_stdout.write(f"Nhan gesture: {gesture}")
+                command_stdout.write(
+                    "Nhan input: "
+                    f"gesture={device_input['gesture']} "
+                    f"btn_menu={device_input['btn_menu']} "
+                    f"btn_ok={device_input['btn_ok']}"
+                )
                 return aiocoap.Message(code=aiocoap.CHANGED)
+
+            async def render_put(self, request):
+                return await self.render_post(request)
 
         async def main():
             host = resolve_bind_host(options["host"])

@@ -5,11 +5,15 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods
 
-from .state import extract_gesture, get_state, set_dashboard_state, set_gesture
+from .state import extract_device_input, get_state, set_dashboard_state, set_device_input
 
 
 def index(request):
     return render(request, "dashboard/index.html")
+
+
+def game(request):
+    return render(request, "dashboard/game.html")
 
 
 @require_GET
@@ -21,18 +25,38 @@ def api_state(request):
 @require_http_methods(["POST"])
 def api_gesture(request):
     data = _read_json(request)
-    gesture = (
-        extract_gesture(data)
-        or extract_gesture(request.POST.get("gesture"))
-        or extract_gesture(request.body)
+    payload = (
+        data
+        or request.POST.get("gesture")
+        or request.body
     )
-    state = set_gesture(gesture)
+    device_input = extract_device_input(payload)
+    state = set_device_input(payload)
 
     if state is None:
         return JsonResponse(
             {
-                "error": "Gesture khong hop le. Dung: len, xuong, trai, phai, dung_yen.",
-                "received": gesture,
+                "error": "Payload khong hop le.",
+                "received": device_input,
+            },
+            status=400,
+        )
+
+    return JsonResponse(state)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_input(request):
+    data = _read_json(request)
+    device_input = extract_device_input(data)
+    state = set_device_input(data)
+
+    if state is None:
+        return JsonResponse(
+            {
+                "error": "Input khong hop le.",
+                "received": device_input,
             },
             status=400,
         )
