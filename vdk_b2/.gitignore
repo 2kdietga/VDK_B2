@@ -5,3 +5,4 @@ db.sqlite3
 media/
 .env
 storage/*.tmp
+gesture_state.json
