@@ -125,5 +125,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ESP32 CoAP target. Change ESP32_IP to the IP printed in ESP32 Serial Monitor.
 ESP32_IP = "192.168.2.50"
-ESP32_COMMAND_PORT = 5683
+ESP32_COMMAND_PORT = 5684
 ESP32_COMMAND_PATH = "command"

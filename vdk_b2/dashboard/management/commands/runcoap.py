@@ -110,7 +110,17 @@ class Command(BaseCommand):
                     command_stdout.write(
                         f"Chuan bi gui ESP32 {uri}: {command} version={command_version}"
                     )
-                    response = await protocol.request(request).response
+                    response = await asyncio.wait_for(
+                        protocol.request(request).response,
+                        timeout=5,
+                    )
+                except asyncio.TimeoutError:
+                    command_stdout.write(
+                        command_style.WARNING(
+                            f"ESP32 khong response sau 5s. URI={uri}, payload={command}"
+                        )
+                    )
+                    continue
                 except Exception as exc:
                     command_stdout.write(
                         command_style.WARNING(

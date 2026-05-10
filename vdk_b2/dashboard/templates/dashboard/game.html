@@ -21,20 +21,29 @@
             </div>
         </section>
 
-        <section class="arena" aria-label="Game kiếm sĩ">
+        <section id="arena" class="arena" aria-label="Game kiếm sĩ">
             <div class="sky"></div>
+            <div class="cloud cloud-a"></div>
+            <div class="cloud cloud-b"></div>
             <div class="mountains"></div>
             <div class="ground"></div>
+            <div class="platform platform-a"></div>
+            <div class="platform platform-b"></div>
+
             <div id="player" class="fighter player">
+                <span class="shadow"></span>
                 <span class="head"></span>
                 <span class="body"></span>
+                <span class="arm"></span>
                 <span class="sword"></span>
             </div>
             <div id="enemy" class="fighter enemy">
+                <span class="shadow"></span>
                 <span class="head"></span>
                 <span class="body"></span>
             </div>
             <div id="slash" class="slash hidden"></div>
+
             <div id="lostOverlay" class="overlay hidden">
                 <h2>Thua rồi</h2>
                 <p>Nhấn OK để chơi lại</p>
@@ -49,6 +58,8 @@
         <section class="game-pad" aria-label="Điều khiển game trên web">
             <button type="button" data-game-input="menu">Menu</button>
             <button type="button" data-game-input="left">Trái</button>
+            <button type="button" data-game-input="up">Nhảy</button>
+            <button type="button" data-game-input="down">Xuống</button>
             <button type="button" data-game-input="ok">OK / Chém</button>
             <button type="button" data-game-input="right">Phải</button>
         </section>

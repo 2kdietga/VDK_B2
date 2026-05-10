@@ -37,6 +37,7 @@ DEFAULT_STATE = {
     "command_version": 0,
     "btn_menu": False,
     "btn_ok": False,
+    "input_version": 0,
     "menu_open": False,
     "menu_index": 0,
     "screen": "dashboard",
@@ -139,6 +140,7 @@ def set_device_input(value):
             state["gesture"] = device_input["gesture"]
         state["btn_menu"] = bool(device_input["btn_menu"])
         state["btn_ok"] = bool(device_input["btn_ok"])
+        state["input_version"] = int(state.get("input_version", 0)) + 1
         state["esp32_last_seen"] = time()
         _apply_device_input(state, action_gesture, state["btn_menu"], state["btn_ok"])
         state["updated_at"] = time()
@@ -164,6 +166,9 @@ def set_dashboard_state(data):
 
         if data.get("control_mode") in ("gesture", "manual"):
             state["control_mode"] = data["control_mode"]
+
+        if data.get("screen") in SCREENS:
+            state["screen"] = data["screen"]
 
         if int(state.get("led", 50)) != previous_led or int(state.get("motor", 50)) != previous_motor:
             state["command_version"] = int(state.get("command_version", 0)) + 1
@@ -218,6 +223,7 @@ def _save_state(state):
         "command_version": int(state.get("command_version", 0)),
         "btn_menu": bool(state.get("btn_menu", False)),
         "btn_ok": bool(state.get("btn_ok", False)),
+        "input_version": int(state.get("input_version", 0)),
         "menu_open": bool(state.get("menu_open", False)),
         "menu_index": max(0, min(len(MENU_ITEMS) - 1, int(state.get("menu_index", 0)))),
         "screen": state.get("screen") if state.get("screen") in SCREENS else "dashboard",

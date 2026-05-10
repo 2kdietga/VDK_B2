@@ -17,6 +17,8 @@ const state = {
     esp32LastSeen: 0,
     esp32Online: false,
     lastServerUpdate: 0,
+    gestureDraftDirty: false,
+    gestureCommitInFlight: false,
 };
 
 const labels = {
@@ -131,15 +133,29 @@ function applyContinuousGesture() {
         return;
     }
 
+    if (state.gesture === "dung_yen") {
+        commitGestureDraft();
+        return;
+    }
+
     if (state.gesture !== "trai" && state.gesture !== "phai") {
         return;
     }
 
     const step = state.gesture === "phai" ? 2 : -2;
     const target = state.activeControl;
-    state[target] = clamp(state[target] + step);
+    const previousValue = state[target];
+    state[target] = clamp(previousValue + step);
+
+    if (state[target] !== previousValue) {
+        state.gestureDraftDirty = true;
+    }
+
     render();
-    pushDashboardState();
+
+    if (state[target] === 0 || state[target] === 100) {
+        commitGestureDraft();
+    }
 }
 
 async function pushDashboardState() {
@@ -153,6 +169,17 @@ async function pushDashboardState() {
             motor: state.motor,
         }),
     }).catch(() => {});
+}
+
+async function commitGestureDraft() {
+    if (!state.gestureDraftDirty || state.gestureCommitInFlight) {
+        return;
+    }
+
+    state.gestureCommitInFlight = true;
+    await pushDashboardState();
+    state.gestureDraftDirty = false;
+    state.gestureCommitInFlight = false;
 }
 
 async function sendInput(input) {
@@ -170,7 +197,16 @@ async function sendInput(input) {
 }
 
 function syncFromServer(data) {
-    state.gesture = data.gesture;
+    const previousGesture = state.gesture;
+    const incomingGesture = data.gesture;
+    const shouldCommitGestureDraft =
+        state.controlMode === "gesture"
+        && !state.menuOpen
+        && incomingGesture === "dung_yen"
+        && (previousGesture === "trai" || previousGesture === "phai")
+        && state.gestureDraftDirty;
+
+    state.gesture = incomingGesture;
     state.btnMenu = Boolean(data.btn_menu);
     state.btnOk = Boolean(data.btn_ok);
     state.menuOpen = Boolean(data.menu_open);
@@ -210,6 +246,11 @@ function syncFromServer(data) {
         }
 
         if (data.gesture === "dung_yen") {
+            if (shouldCommitGestureDraft) {
+                commitGestureDraft();
+                return;
+            }
+
             state.led = Number(data.led);
             state.motor = Number(data.motor);
             state.activeControl = data.active_control;

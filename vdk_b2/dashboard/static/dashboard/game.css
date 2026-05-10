@@ -4,6 +4,7 @@
     --line: #d8e0ea;
     --accent: #1f9d8a;
     --danger: #d94d3f;
+    --gold: #f0a15b;
 }
 
 * {
@@ -29,7 +30,7 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 18px;
-    padding: 18px 24px;
+    padding: 16px 24px;
     background: #ffffff;
     border-bottom: 1px solid var(--line);
 }
@@ -47,7 +48,7 @@ h1 {
 }
 
 h1 {
-    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-size: clamp(1.4rem, 3vw, 2.1rem);
 }
 
 .stats {
@@ -69,26 +70,73 @@ h1 {
 
 .arena {
     position: relative;
+    width: min(100vw, 960px);
     min-height: 520px;
+    margin: 0 auto;
     overflow: hidden;
-    background: linear-gradient(#9dd6ff 0 56%, #6fb77a 56% 100%);
+    background: linear-gradient(#8fd0ff 0 48%, #9bd281 48% 100%);
+    box-shadow: inset 0 -80px 90px rgba(31, 86, 54, 0.16);
 }
 
 .sky {
     position: absolute;
     inset: 0 0 42% 0;
-    background: radial-gradient(circle at 78% 22%, #fff6b8 0 7%, transparent 8%);
+    background:
+        radial-gradient(circle at 78% 22%, #fff6b8 0 7%, transparent 8%),
+        linear-gradient(#7fc8ff, #c6ecff);
+}
+
+.cloud {
+    position: absolute;
+    top: 70px;
+    width: 110px;
+    height: 34px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.cloud::before,
+.cloud::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: inherit;
+}
+
+.cloud::before {
+    left: 18px;
+    top: -18px;
+    width: 42px;
+    height: 42px;
+}
+
+.cloud::after {
+    right: 18px;
+    top: -13px;
+    width: 36px;
+    height: 36px;
+}
+
+.cloud-a {
+    left: 120px;
+}
+
+.cloud-b {
+    right: 160px;
+    top: 112px;
+    transform: scale(0.8);
 }
 
 .mountains {
     position: absolute;
     left: -5%;
     right: -5%;
-    bottom: 38%;
-    height: 28%;
+    bottom: 36%;
+    height: 30%;
     background:
         linear-gradient(135deg, transparent 0 45%, #8fb0c2 46% 55%, transparent 56%) 0 0 / 28% 100% repeat-x,
-        linear-gradient(135deg, transparent 0 45%, #69889b 46% 55%, transparent 56%) 10% 22% / 32% 84% repeat-x;
+        linear-gradient(135deg, transparent 0 45%, #607f92 46% 55%, transparent 56%) 10% 22% / 32% 84% repeat-x;
+    opacity: 0.95;
 }
 
 .ground {
@@ -96,27 +144,57 @@ h1 {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 32%;
+    height: 34%;
     background:
-        linear-gradient(90deg, rgba(255,255,255,0.14) 0 1px, transparent 1px 80px),
-        linear-gradient(#4f8a58, #2e6840);
+        radial-gradient(circle at 20% 18%, rgba(255,255,255,0.17) 0 2px, transparent 3px),
+        linear-gradient(90deg, rgba(255,255,255,0.13) 0 1px, transparent 1px 80px),
+        linear-gradient(#4f9b5f, #2f6b42);
+}
+
+.platform {
+    position: absolute;
+    height: 14px;
+    border-radius: 8px;
+    background: linear-gradient(#7a5430, #4b331f);
+    box-shadow: 0 8px 0 #315f37;
+}
+
+.platform-a {
+    left: 230px;
+    top: 310px;
+    width: 160px;
+}
+
+.platform-b {
+    right: 170px;
+    top: 250px;
+    width: 140px;
 }
 
 .fighter {
     position: absolute;
-    bottom: 25%;
-    width: 54px;
-    height: 94px;
+    width: 58px;
+    height: 98px;
     transform: translateX(-50%);
-    transition: left 0.16s ease;
+    transition: transform 0.08s linear;
+}
+
+.shadow {
+    position: absolute;
+    left: 4px;
+    bottom: -12px;
+    width: 50px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(25, 45, 35, 0.22);
 }
 
 .fighter .head {
     position: absolute;
     left: 15px;
     top: 0;
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     background: #f2c09b;
     border: 2px solid rgba(0, 0, 0, 0.15);
@@ -125,11 +203,22 @@ h1 {
 .fighter .body {
     position: absolute;
     left: 10px;
-    top: 25px;
-    width: 34px;
-    height: 46px;
-    border-radius: 8px 8px 4px 4px;
-    background: var(--accent);
+    top: 27px;
+    width: 38px;
+    height: 48px;
+    border-radius: 10px 10px 5px 5px;
+    background: linear-gradient(#36c0aa, var(--accent));
+}
+
+.fighter .arm {
+    position: absolute;
+    left: 37px;
+    top: 35px;
+    width: 14px;
+    height: 32px;
+    border-radius: 8px;
+    background: #247a6f;
+    transform: rotate(-24deg);
 }
 
 .fighter::before,
@@ -144,26 +233,47 @@ h1 {
 }
 
 .fighter::before {
-    left: 13px;
+    left: 14px;
 }
 
 .fighter::after {
-    right: 13px;
+    right: 14px;
+}
+
+.player.running::before {
+    transform: rotate(16deg);
+}
+
+.player.running::after {
+    transform: rotate(-16deg);
+}
+
+.player.jumping {
+    filter: drop-shadow(0 10px 14px rgba(20, 32, 51, 0.16));
+}
+
+.player.crouch .body {
+    top: 43px;
+    height: 32px;
+}
+
+.player.crouch .head {
+    top: 17px;
 }
 
 .enemy .body {
-    background: #8d4ec2;
+    background: linear-gradient(#a675dc, #7648bb);
 }
 
 .enemy.hurt .body {
-    background: var(--danger);
+    background: linear-gradient(#ee786b, var(--danger));
 }
 
 .sword {
     position: absolute;
-    left: 40px;
-    top: 30px;
-    width: 48px;
+    left: 42px;
+    top: 34px;
+    width: 52px;
     height: 6px;
     border-radius: 999px;
     background: #e8eef7;
@@ -173,25 +283,31 @@ h1 {
 }
 
 .player.left .sword {
-    left: -34px;
+    left: -36px;
     transform-origin: right center;
     transform: rotate(18deg);
 }
 
 .slash {
     position: absolute;
-    bottom: 35%;
-    width: 62px;
-    height: 62px;
-    border: 5px solid transparent;
+    width: 84px;
+    height: 84px;
+    border: 6px solid transparent;
     border-right-color: #ffffff;
     border-top-color: #ffffff;
     border-radius: 50%;
     transform: translateX(-50%) rotate(30deg);
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.85));
+    animation: slash 0.16s ease-out infinite alternate;
 }
 
 .slash.left {
     transform: translateX(-50%) scaleX(-1) rotate(30deg);
+}
+
+@keyframes slash {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
 }
 
 .overlay {
@@ -202,7 +318,7 @@ h1 {
     transform: translate(-50%, -50%);
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.96);
     padding: 22px;
     text-align: center;
     box-shadow: 0 24px 50px rgba(20, 32, 51, 0.22);
@@ -234,7 +350,7 @@ h1 {
 
 .game-pad {
     display: grid;
-    grid-template-columns: repeat(4, minmax(80px, 1fr));
+    grid-template-columns: repeat(6, minmax(80px, 1fr));
     gap: 10px;
     padding: 14px 24px 22px;
     background: #ffffff;
