@@ -25,12 +25,13 @@ SECRET_KEY = 'django-insecure-25@nj_k#8#j7$$_fg=mnexr4=a2ktf=qwm#c$%th**m=szynp=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'dashboard',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -120,3 +121,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ESP32 CoAP target. Change ESP32_IP to the IP printed in ESP32 Serial Monitor.
+ESP32_IP = "192.168.2.50"
+ESP32_COMMAND_PORT = 5683
+ESP32_COMMAND_PATH = "command"
