@@ -124,6 +124,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # ESP32 CoAP target. Change ESP32_IP to the IP printed in ESP32 Serial Monitor.
+# If the Django server is public and ESP32 is behind NAT/private IP, keep
+# ESP32_COMMAND_PUSH_ENABLED = False and let ESP32 poll /api/device-command/.
 ESP32_IP = "192.168.2.50"
 ESP32_COMMAND_PORT = 5684
 ESP32_COMMAND_PATH = "command"
+ESP32_COMMAND_PUSH_ENABLED = False
+ESP32_COMMAND_POLL_INTERVAL_MS = 150

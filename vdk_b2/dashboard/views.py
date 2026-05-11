@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -19,6 +20,30 @@ def game(request):
 @require_GET
 def api_state(request):
     return JsonResponse(get_state())
+
+
+@require_GET
+def api_device_command(request):
+    state = get_state()
+    current_version = int(state.get("command_version", 0))
+    last_version = _read_int(request.GET.get("last_version"), default=-1)
+    changed = last_version < current_version
+
+    payload = {
+        "changed": changed,
+        "command_version": current_version,
+        "poll_interval_ms": int(getattr(settings, "ESP32_COMMAND_POLL_INTERVAL_MS", 150)),
+    }
+
+    if changed:
+        payload.update(
+            {
+                "led": int(state.get("led", 0)),
+                "motor": int(state.get("motor", 0)),
+            }
+        )
+
+    return JsonResponse(payload)
 
 
 @csrf_exempt
@@ -79,3 +104,10 @@ def _read_json(request):
         return json.loads(request.body.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError):
         return {}
+
+
+def _read_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default

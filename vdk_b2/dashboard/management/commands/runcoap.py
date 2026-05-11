@@ -19,10 +19,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         command_stdout = self.stdout
         command_style = self.style
+        push_enabled = bool(getattr(settings, "ESP32_COMMAND_PUSH_ENABLED", False))
         esp32_ip = getattr(settings, "ESP32_IP", "")
         esp32_command_port = getattr(settings, "ESP32_COMMAND_PORT", 5683)
         esp32_command_path = getattr(settings, "ESP32_COMMAND_PATH", "command")
-        if not esp32_ip:
+        if push_enabled and not esp32_ip:
             raise CommandError("ESP32_IP trong settings.py dang rong.")
 
         try:
@@ -70,12 +71,19 @@ class Command(BaseCommand):
                     f"CoAP server dang chay tai coap://{host}:{options['port']}/{options['path']}"
                 )
             )
-            command_stdout.write(
-                command_style.SUCCESS(
-                    f"ESP32 command target: coap://{esp32_ip}:{esp32_command_port}/{esp32_command_path}"
+            if push_enabled:
+                command_stdout.write(
+                    command_style.SUCCESS(
+                        f"ESP32 command push target: coap://{esp32_ip}:{esp32_command_port}/{esp32_command_path}"
+                    )
                 )
-            )
-            asyncio.create_task(send_device_updates(protocol, aiocoap, ContentFormat))
+                asyncio.create_task(send_device_updates(protocol, aiocoap, ContentFormat))
+            else:
+                command_stdout.write(
+                    command_style.SUCCESS(
+                        "ESP32 command push da tat. ESP32 poll HTTP /api/device-command/ moi 150ms."
+                    )
+                )
             await asyncio.get_running_loop().create_future()
 
         async def send_device_updates(protocol, aiocoap, content_format):
