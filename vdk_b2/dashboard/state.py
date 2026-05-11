@@ -139,7 +139,8 @@ def set_device_input(value):
         if device_input["gesture"] is not None:
             state["gesture"] = device_input["gesture"]
         state["btn_menu"] = bool(device_input["btn_menu"])
-        state["btn_ok"] = bool(device_input["btn_ok"])
+        if device_input["btn_ok"] is not None:
+            state["btn_ok"] = bool(device_input["btn_ok"])
         state["input_version"] = int(state.get("input_version", 0)) + 1
         state["esp32_last_seen"] = time()
         _apply_device_input(state, action_gesture, state["btn_menu"], state["btn_ok"])
