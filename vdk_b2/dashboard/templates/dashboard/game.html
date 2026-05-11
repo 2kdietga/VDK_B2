@@ -4,64 +4,47 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Game giải trí</title>
+    <title>Wave Shooter</title>
     <link rel="stylesheet" href="{% static 'dashboard/game.css' %}">
 </head>
 <body>
-    <main class="game-shell">
-        <section class="hud">
-            <div>
-                <p class="label">Chế độ giải trí</p>
-                <h1>Kiếm sĩ địa hình</h1>
+    <main class="game-page">
+        <section id="gw" aria-label="Wave Shooter">
+            <h1>Wave Shooter</h1>
+            <div id="hud">
+                <div class="hud-hp">
+                    <span class="hud-muted">HP</span>
+                    <div id="hpbar"><div id="hpfill"></div></div>
+                    <span class="hud-val" id="hptxt">100</span>
+                </div>
+                <span class="hud-val" id="wavetxt">Sóng 1</span>
+                <span class="hud-score" id="sctxt">0 điểm</span>
             </div>
-            <div class="stats">
-                <span id="hpLabel">HP 5</span>
-                <span id="enemyLabel">Quái 3</span>
-                <span id="scoreLabel">Điểm 0</span>
-            </div>
-        </section>
 
-        <section id="arena" class="arena" aria-label="Game kiếm sĩ">
-            <div class="sky"></div>
-            <div class="cloud cloud-a"></div>
-            <div class="cloud cloud-b"></div>
-            <div class="mountains"></div>
-            <div class="ground"></div>
-            <div class="platform platform-a"></div>
-            <div class="platform platform-b"></div>
+            <div class="canvas-wrap">
+                <canvas id="cv" width="640" height="320"></canvas>
+                <div id="pauseMenu" class="pause-menu hidden">
+                    <p>Menu game</p>
+                    <button type="button" class="active" data-menu-action="continue">Tiếp tục chơi</button>
+                    <button type="button" data-menu-action="dashboard">Trở về dashboard</button>
+                </div>
+            </div>
 
-            <div id="player" class="fighter player">
-                <span class="shadow"></span>
-                <span class="head"></span>
-                <span class="body"></span>
-                <span class="arm"></span>
-                <span class="sword"></span>
+            <div id="info">WASD / mũi tên di chuyển · SPACE / J / OK tấn công · M mở menu · R chơi lại</div>
+            <div id="ctrls">
+                <div class="dpad">
+                    <div class="drow"><button class="btn" id="bU" type="button" aria-label="lên">▲</button></div>
+                    <div class="drow">
+                        <button class="btn" id="bL" type="button" aria-label="trái">◀</button>
+                        <button class="btn" id="bD" type="button" aria-label="xuống">▼</button>
+                        <button class="btn" id="bR" type="button" aria-label="phải">▶</button>
+                    </div>
+                </div>
+                <div class="action-pad">
+                    <button class="btn menu-btn" id="bM" type="button" aria-label="menu">☰</button>
+                    <button class="btn batk" id="bA" type="button" aria-label="tấn công">⚔</button>
+                </div>
             </div>
-            <div id="enemy" class="fighter enemy">
-                <span class="shadow"></span>
-                <span class="head"></span>
-                <span class="body"></span>
-            </div>
-            <div id="slash" class="slash hidden"></div>
-
-            <div id="lostOverlay" class="overlay hidden">
-                <h2>Thua rồi</h2>
-                <p>Nhấn OK để chơi lại</p>
-            </div>
-            <div id="pauseMenu" class="overlay menu hidden">
-                <p class="label">Menu game</p>
-                <div class="menu-item active" data-game-menu-index="0">Tiếp tục chơi</div>
-                <div class="menu-item" data-game-menu-index="1">Trở về dashboard</div>
-            </div>
-        </section>
-
-        <section class="game-pad" aria-label="Điều khiển game trên web">
-            <button type="button" data-game-input="menu">Menu</button>
-            <button type="button" data-game-input="left">Trái</button>
-            <button type="button" data-game-input="up">Nhảy</button>
-            <button type="button" data-game-input="down">Xuống</button>
-            <button type="button" data-game-input="ok">OK / Chém</button>
-            <button type="button" data-game-input="right">Phải</button>
         </section>
     </main>
 

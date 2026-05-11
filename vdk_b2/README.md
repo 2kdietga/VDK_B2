@@ -121,7 +121,7 @@ Vai trò file chính:
 - `dashboard/management/commands/runcoap.py`: nhận gesture CoAP từ ESP32, gửi command LED/Motor về ESP32.
 - `dashboard/network.py`: tự lấy IP LAN của laptop.
 - `dashboard/static/dashboard/dashboard.js`: logic dashboard, polling state, điều khiển LED/Motor.
-- `dashboard/static/dashboard/game.js`: game loop, input, vật lý nhân vật/quái, menu game.
+- `dashboard/static/dashboard/game.js`: game loop canvas, wave/enemy spawn, input, HUD, menu game.
 - `gesture_state.json`: state runtime sinh tự động, không nên commit.
 
 ## Luồng dữ liệu
@@ -197,7 +197,7 @@ Game dùng state để:
 
 - đọc gesture liên tục;
 - xử lý `btn_menu` để mở menu pause;
-- xử lý `btn_ok` để chém hoặc chơi lại;
+- xử lý `btn_ok` để tấn công hoặc chơi lại;
 - quay về dashboard khi chọn menu tương ứng.
 
 ### 4. Dashboard cập nhật LED/Motor
@@ -337,23 +337,25 @@ http://127.0.0.1:8000/game/
 
 Hoặc vào từ menu dashboard.
 
+Game hiện tại là **Wave Shooter**: người chơi di chuyển trong màn hình, bắn/tấn công kẻ thù theo từng sóng, nhận thêm HP giữa các sóng và tính điểm theo loại kẻ thù.
+
 Điều khiển game:
 
 | Input | Chức năng |
 | --- | --- |
-| `left` / `trai` | chạy sang trái |
-| `right` / `phai` | chạy sang phải |
-| `up` / `len` | nhảy |
-| `down` / `xuong` | cúi hoặc rơi nhanh |
-| `btn_ok` | chém, chơi lại khi thua |
+| `left` / `trai` | di chuyển sang trái |
+| `right` / `phai` | di chuyển sang phải |
+| `up` / `len` | di chuyển lên |
+| `down` / `xuong` | di chuyển xuống |
+| `btn_ok` | tấn công, chơi lại khi thua |
 | `btn_menu` | mở menu game |
 
 Phím test trên laptop:
 
 - `A`/`D` hoặc `ArrowLeft`/`ArrowRight`: trái/phải.
-- `W` hoặc `ArrowUp`: nhảy.
-- `S` hoặc `ArrowDown`: cúi/rơi nhanh.
-- `Enter` hoặc `Space`: OK/chém.
+- `W`/`S` hoặc `ArrowUp`/`ArrowDown`: lên/xuống.
+- `Space` hoặc `J`: tấn công.
+- `R`: chơi lại.
 - `M` hoặc `Escape`: menu.
 
 Menu game:
