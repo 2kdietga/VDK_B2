@@ -6,9 +6,9 @@ Dashboard Django nhận gesture từ ESP32 qua CoAP, điều khiển LED/Motor, 
 
 Dự án gồm 3 phần chính:
 
-- **ESP32**: gửi gesture/nút bấm lên server bằng CoAP/HTTP và chủ động polling lệnh LED/Motor.
+- **ESP32**: gửi gesture/nút bấm lên server bằng CoAP và chủ động polling lệnh LED/Motor bằng CoAP.
 - **Django server**: phục vụ giao diện web, API trạng thái, lưu state runtime vào `gesture_state.json`.
-- **CoAP bridge**: command `runcoap` nhận input CoAP từ ESP32. Chiều command về ESP32 mặc định dùng HTTP polling để chạy được khi ESP32 ở mạng private/NAT.
+- **CoAP bridge**: command `runcoap` nhận input CoAP từ ESP32 và cung cấp endpoint CoAP để ESP32 polling command khi ở mạng private/NAT.
 
 ## Công nghệ
 
@@ -43,12 +43,14 @@ ESP32_COMMAND_PORT = 5684
 ESP32_COMMAND_PATH = "command"
 ESP32_COMMAND_PUSH_ENABLED = False
 ESP32_COMMAND_POLL_INTERVAL_MS = 150
+ESP32_COMMAND_POLL_PATH = "command"
 ```
 
 Ý nghĩa:
 
-- `ESP32_COMMAND_PUSH_ENABLED`: `False` để ESP32 tự poll command từ server. Đây là chế độ nên dùng khi server có IP public còn ESP32 nằm trong mạng private.
+- `ESP32_COMMAND_PUSH_ENABLED`: `False` để ESP32 tự poll command từ server bằng CoAP. Đây là chế độ nên dùng khi server có IP public còn ESP32 nằm trong mạng private.
 - `ESP32_COMMAND_POLL_INTERVAL_MS`: chu kỳ polling gợi ý cho ESP32, hiện là `150ms`.
+- `ESP32_COMMAND_POLL_PATH`: path CoAP trên server để ESP32 polling command.
 - `ESP32_IP`: chỉ cần dùng khi bật push CoAP chiều server -> ESP32.
 - `ESP32_COMMAND_PORT`: port CoAP trên ESP32 để nhận lệnh LED/Motor nếu bật push.
 - `ESP32_COMMAND_PATH`: path CoAP trên ESP32 để nhận command nếu bật push.
@@ -74,7 +76,7 @@ Dừng cả Django và CoAP bằng `Ctrl+C`.
 Có thể đổi host/port khi chạy:
 
 ```powershell
-python manage.py runall --django-host 0.0.0.0 --django-port 8000 --coap-host auto --coap-port 5683 --coap-path gesture
+python manage.py runall --django-host 0.0.0.0 --django-port 8000 --coap-host auto --coap-port 5683 --coap-path gesture --coap-command-path command
 ```
 
 Chỉ chạy Django:
@@ -227,10 +229,10 @@ Nếu `led` hoặc `motor` thay đổi, `command_version` tăng lên.
 
 ### 5. ESP32 polling command LED/Motor
 
-Khi dashboard đổi `led` hoặc `motor`, server tăng `command_version`. Vì ESP32 thường nằm sau NAT/private IP, ESP32 nên chủ động hỏi server mỗi `150ms`:
+Khi dashboard đổi `led` hoặc `motor`, server tăng `command_version`. Vì ESP32 thường nằm sau NAT/private IP, ESP32 nên chủ động hỏi server bằng CoAP mỗi `150ms`:
 
 ```text
-GET http://<PUBLIC_SERVER>/api/device-command/?last_version=<VERSION_ESP32_DANG_CO>
+GET coap://<PUBLIC_SERVER>:5683/command?last_version=<VERSION_ESP32_DANG_CO>
 ```
 
 Nếu có command mới, server trả:
@@ -257,7 +259,7 @@ Nếu chưa có thay đổi, server trả gọn:
 }
 ```
 
-Chiều push CoAP server -> ESP32 vẫn có thể bật lại bằng `ESP32_COMMAND_PUSH_ENABLED = True`, nhưng chỉ phù hợp khi server truy cập trực tiếp được IP/port của ESP32.
+Chiều push CoAP server -> ESP32 vẫn có thể bật lại bằng `ESP32_COMMAND_PUSH_ENABLED = True`, nhưng chỉ phù hợp khi server truy cập trực tiếp được IP/port của ESP32. Với public server/private ESP32, giữ polling CoAP là đúng hướng hơn.
 
 ## API
 
@@ -274,15 +276,31 @@ Trả về toàn bộ state hiện tại, kèm thông tin runtime:
 
 ESP32 được xem là online nếu có input trong vòng 10 giây gần nhất.
 
-### `GET /api/device-command/`
+## CoAP endpoints cho ESP32
 
-API để ESP32 polling lệnh LED/Motor. ESP32 gửi `last_version` là command version cuối cùng đã xử lý:
+### `POST/PUT coap://<SERVER>:5683/gesture`
+
+ESP32 gửi gesture/nút bấm lên server. Payload JSON khuyến nghị:
+
+```json
+{"state":"right","btn_ok":false,"btn_menu":false}
+```
+
+### `GET coap://<SERVER>:5683/command?last_version=<n>`
+
+ESP32 polling lệnh LED/Motor. ESP32 gửi `last_version` là command version cuối cùng đã xử lý:
 
 ```text
-GET /api/device-command/?last_version=12
+GET coap://<SERVER>:5683/command?last_version=12
 ```
 
 Nếu có lệnh mới, response có `changed: true`, `command_version`, `poll_interval_ms`, `led`, `motor`. Nếu không có lệnh mới, response có `changed: false`.
+
+Payload response là JSON, ví dụ:
+
+```json
+{"changed":true,"command_version":13,"poll_interval_ms":150,"led":75,"motor":40}
+```
 
 ### `POST /api/input/`
 
@@ -431,7 +449,7 @@ POST coap://<IP_LAPTOP>:5683/gesture
 
 ### ESP32 không nhận được LED/Motor mới
 
-- Kiểm tra ESP32 có polling đúng endpoint public không: `http://<PUBLIC_SERVER>/api/device-command/?last_version=<n>`.
+- Kiểm tra ESP32 có polling đúng endpoint CoAP public không: `coap://<PUBLIC_SERVER>:5683/command?last_version=<n>`.
 - Kiểm tra ESP32 có cập nhật lại `last_version` sau khi nhận `changed: true` không.
 - Kiểm tra dashboard có làm tăng `command_version` khi đổi LED/Motor không bằng `GET /api/state/`.
 - Chu kỳ polling khuyến nghị là `150ms`; có thể đọc từ trường `poll_interval_ms`.

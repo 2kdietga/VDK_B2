@@ -17,15 +17,24 @@ class Command(BaseCommand):
         parser.add_argument("--coap-host", default="auto")
         parser.add_argument("--coap-port", type=int, default=5683)
         parser.add_argument("--coap-path", default="gesture")
+        parser.add_argument(
+            "--coap-command-path",
+            default=getattr(settings, "ESP32_COMMAND_POLL_PATH", "command"),
+        )
 
     def handle(self, *args, **options):
         django_addr = f"{options['django_host']}:{options['django_port']}"
         coap_host = resolve_bind_host(options["coap_host"])
         coap_addr = f"coap://{coap_host}:{options['coap_port']}/{options['coap_path']}"
+        coap_command_addr = (
+            f"coap://{coap_host}:{options['coap_port']}/"
+            f"{options['coap_command_path']}?last_version=N"
+        )
         esp32_ip = getattr(settings, "ESP32_IP", "")
         esp32_command_port = getattr(settings, "ESP32_COMMAND_PORT", 5683)
         esp32_command_path = getattr(settings, "ESP32_COMMAND_PATH", "command")
-        if not esp32_ip:
+        push_enabled = bool(getattr(settings, "ESP32_COMMAND_PUSH_ENABLED", False))
+        if push_enabled and not esp32_ip:
             raise CommandError("ESP32_IP trong settings.py dang rong.")
 
         commands = [
@@ -46,6 +55,8 @@ class Command(BaseCommand):
                 str(options["coap_port"]),
                 "--path",
                 options["coap_path"],
+                "--command-path",
+                options["coap_command_path"],
             ],
         ]
 
@@ -54,11 +65,13 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Django dashboard: http://{django_addr}/"))
         self.stdout.write(self.style.SUCCESS(f"CoAP endpoint: {coap_addr}"))
         self.stdout.write(self.style.SUCCESS(f"ESP32 gui gesture toi: coap://{coap_host}:{options['coap_port']}/{options['coap_path']}"))
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"ESP32 command: coap://{esp32_ip}:{esp32_command_port}/{esp32_command_path}"
+        self.stdout.write(self.style.SUCCESS(f"ESP32 poll command tai: {coap_command_addr}"))
+        if push_enabled:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"ESP32 command push: coap://{esp32_ip}:{esp32_command_port}/{esp32_command_path}"
+                )
             )
-        )
         self.stdout.write("Nhan Ctrl+C de tat ca Django va CoAP.")
 
         try:

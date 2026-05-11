@@ -15,6 +15,10 @@ class Command(BaseCommand):
         parser.add_argument("--host", default="auto")
         parser.add_argument("--port", type=int, default=5683)
         parser.add_argument("--path", default="gesture")
+        parser.add_argument(
+            "--command-path",
+            default=getattr(settings, "ESP32_COMMAND_POLL_PATH", "command"),
+        )
 
     def handle(self, *args, **options):
         command_stdout = self.stdout
@@ -58,10 +62,40 @@ class Command(BaseCommand):
             async def render_put(self, request):
                 return await self.render_post(request)
 
+        class CommandPollResource(resource.Resource):
+            async def render_get(self, request):
+                state = get_state()
+                command_version = int(state.get("command_version", 0))
+                last_version = _read_query_int(request.opt.uri_query, "last_version", -1)
+                changed = last_version < command_version
+                payload = {
+                    "changed": changed,
+                    "command_version": command_version,
+                    "poll_interval_ms": int(
+                        getattr(settings, "ESP32_COMMAND_POLL_INTERVAL_MS", 150)
+                    ),
+                }
+
+                if changed:
+                    payload.update(
+                        {
+                            "led": int(state.get("led", 0)),
+                            "motor": int(state.get("motor", 0)),
+                        }
+                    )
+
+                response = aiocoap.Message(
+                    code=aiocoap.CONTENT,
+                    payload=json.dumps(payload, separators=(",", ":")).encode("utf-8"),
+                )
+                response.opt.content_format = ContentFormat.JSON
+                return response
+
         async def main():
             host = resolve_bind_host(options["host"])
             root = resource.Site()
             root.add_resource([options["path"]], GestureResource())
+            root.add_resource([options["command_path"]], CommandPollResource())
             protocol = await aiocoap.Context.create_server_context(
                 root,
                 bind=(host, options["port"]),
@@ -69,6 +103,11 @@ class Command(BaseCommand):
             command_stdout.write(
                 command_style.SUCCESS(
                     f"CoAP server dang chay tai coap://{host}:{options['port']}/{options['path']}"
+                )
+            )
+            command_stdout.write(
+                command_style.SUCCESS(
+                    f"ESP32 command poll endpoint: coap://{host}:{options['port']}/{options['command_path']}?last_version=N"
                 )
             )
             if push_enabled:
@@ -81,7 +120,7 @@ class Command(BaseCommand):
             else:
                 command_stdout.write(
                     command_style.SUCCESS(
-                        "ESP32 command push da tat. ESP32 poll HTTP /api/device-command/ moi 150ms."
+                        "ESP32 command push da tat. ESP32 poll CoAP /command moi 150ms."
                     )
                 )
             await asyncio.get_running_loop().create_future()
@@ -142,3 +181,14 @@ def _build_device_payload(state):
         "motor": int(state.get("motor", 0)),
     }
     return json.dumps(command, separators=(",", ":")).encode("utf-8")
+
+
+def _read_query_int(query_items, key, default=0):
+    prefix = f"{key}="
+    for item in query_items:
+        if item.startswith(prefix):
+            try:
+                return int(item[len(prefix):])
+            except ValueError:
+                return default
+    return default
